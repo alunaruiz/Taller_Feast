@@ -1,0 +1,71 @@
+version: '2'
+networks:
+  feast-network:
+services:
+  minio_service:
+    container_name: Minio_service
+    command: server /data --console-address ":9000" --address ":9001"
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=supersecret
+      - MLFLOW_S3_ENDPOINT_URL=http://minio_service:9000
+      - MLFLOW_S3_IGNORE_TLS=true
+      - BACKEND_STORE_URI="mysql://root:123456@db/db"
+      - ARTIFACT_ROOT="s3://mlflows3/artifacts"
+      - MINIO_S3_STRICT_ACL=off
+      - MINIO_REGION_NAME=sa-east-1
+    image: quay.io/minio/minio:latest
+    ports:
+      - '9000:9000'
+    volumes:
+      - ./minio:/data      
+    networks:
+      - feast-network
+    restart: unless-stopped
+#Base de datos MySQL para almacenar la data
+  dbfeast:
+    container_name: dbfeast
+    image: mysql
+    ports:
+      - 3305:3305
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: dbfeast
+    hostname: dbfeast
+    volumes:
+      - ./FS:/var/lib/mysql
+    networks:
+      - feast-network
+#API de consumo de datos
+  apifeast:
+    build: ./APIFEAST
+    ports:
+      - "8502:8502"
+      - "8005:8005"
+    volumes:
+      - ./APIFEAST:/APIFEAST:rw
+      - ./F/data/covertype:/F/data/covertype:rw
+    environment:
+      MYSQL_HOST: dbfeast
+      MYSQL_USER: root
+      MYSQL_PASSWORD: 123456
+      MYSQL_DATABASE: dbfeast
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "1"
+          memory: 800M
+    networks:
+      - feast-network
+  jupyter:
+    build: ./notebook
+    ports:
+      - 6565:6565
+      - 6566:6566  
+      - 8888:8888 
+    volumes:
+      - ./notebook:/notebook:rw
+      - ./notebook/feast:/app/feast
+    networks:
+      - feast-network

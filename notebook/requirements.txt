@@ -1,0 +1,7 @@
+mlflow
+catboost
+sklearn
+numpy
+mysql-connector-python
+feast
+protobuf==3.19.5

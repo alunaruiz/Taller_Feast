@@ -1,0 +1,12 @@
+project: my_project
+registry: data/registry.db
+
+provider:
+  name: local
+  local:
+    path: feast/warehouse
+
+online_store:
+  type: sqlite
+  path: data/online_store.db
+
