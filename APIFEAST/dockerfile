@@ -1,0 +1,19 @@
+# Dockerfile
+
+# Use the official Python image as the parent image
+FROM python:3.9
+
+# Set the working directory to /APIFEAST
+WORKDIR /APIFEAST
+
+# Copy the rest of the application code into the container at /APIFEAST
+COPY . .
+
+# Install any needed packages specified in requirements.txt
+RUN pip install -r requirements.txt
+
+# Download the dataset and insert into the MySQL database
+RUN python main.py
+
+# Start the API server
+CMD ["bash", "-c", "uvicorn main:app --host 0.0.0.0 --port 8005 --reload"]
